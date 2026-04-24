@@ -1,0 +1,20 @@
+{% for i in ansible_play_hosts %}{{ i }}.{{ domain }} ansible_host={{ hostvars[i]['ansible_host']}} ansible_user={{hostvars[i]['ansible_user']}}
+{% endfor %}
+
+
+[kafka] 
+{% for i in ansible_play_hosts %}{{ i }}.{{domain}}
+{% endfor %}
+
+[zookeeper] 
+{% for i in ansible_play_hosts %}{{ i }}.{{domain}}
+{% endfor %}
+
+[crxsr] 
+{% for i in ansible_play_hosts %}{{ i }}.{{domain}}
+{% endfor %}
+
+[crxui] 
+{% for i in ansible_play_hosts %}{{ i }}.{{domain}}
+{% endfor %}
+

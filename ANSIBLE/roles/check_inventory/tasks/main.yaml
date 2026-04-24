@@ -1,0 +1,74 @@
+- name: Debug
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.debug:
+    msg: lookup('env','TF_VAR_CLOUDRU_KEY_ID')
+
+- name: Check inventory file
+  delegate_to: localhost
+  assert:
+    that:
+      - config.vm_params[0].az is defined
+      - config.vm_params[0].ogid is defined
+      - config.vm_params[0].project_id is defined
+      - config.vm_params[0].image_name is defined
+      - config.vm_params[0].cpu is defined
+      - config.vm_params[0].ram is defined
+      - config.vm_params[0].hdd is defined
+      - config.vm_params[0].hdd_data is defined
+      - config.vm_params[0].oversubscription is defined
+      - config.vm_params[0].service_id is defined
+      - config.vm_params[0].cluster_type is defined
+      - config.vm_params[0].gis_code is defined
+      - config.vm_params[0].stand_type is defined
+      - config.net_params[0].subnet is defined
+      - config.net_params[0].gis_subnet is defined
+
+    fail_msg: "Check if all parameters for VMs and network are set"
+
+- name: Check env variables
+  delegate_to: localhost
+  assert:
+    that:
+      - lookup('env','TF_VAR_CLOUDRU_KEY_ID') | length > 0
+      - lookup('env','TF_VAR_CLOUDRU_SECRET') | length > 0
+      - lookup('env','CLOUDRU_COMPUTE_API_URL') | length > 0
+      - lookup('env','CLOUDRU_MAGIC_ROUTER_API_URL') | length > 0
+      - lookup('env','CLOUDRU_VPC_API_URL') | length > 0
+      - lookup('env','CLOUDRU_QUOTES_API_URL') | length > 0
+      - lookup('env','CLOUDRU_IAM_API_URL') | length > 0
+      - lookup('env','CLOUDRU_BAREMETAL_API_URL') | length > 0
+      - lookup('env','CLOUDRU_MK8S_API_URL') | length > 0
+      - lookup('env','CLOUDRU_DNS_API_URL') | length > 0
+      - lookup('env','CLOUDRU_NLB_API_URL') | length > 0
+      - lookup('env','CLOUDRU_KAFKA_API_URL') | length > 0
+      - lookup('env','CLOUDRU_REDIS_API_URL') | length > 0
+      - lookup('env','CLOUDRU_S3_API_URL') | length > 0
+      - lookup('env','IPA_ADDER') | length > 0
+      - lookup('env','IPA_ADDER_PASSWORD') | length > 0
+    fail_msg: "Check if all env vars are set"
+  
+- name: Set env vars
+  delegate_to: localhost
+  set_fact:
+    tf_vars:
+       TF_VAR_CLOUDRU_KEY_ID: "{{ lookup('env','TF_VAR_CLOUDRU_KEY_ID') }}"
+       TF_VAR_CLOUDRU_SECRET: "{{ lookup('env','TF_VAR_CLOUDRU_SECRET') }}"
+       CLOUDRU_COMPUTE_API_URL: "{{ lookup('env','CLOUDRU_COMPUTE_API_URL') }}"
+       CLOUDRU_MAGIC_ROUTER_API_URL: "{{ lookup('env','CLOUDRU_MAGIC_ROUTER_API_URL') }}"
+       CLOUDRU_VPC_API_URL: "{{ lookup('env','CLOUDRU_VPC_API_URL') }}"
+       CLOUDRU_QUOTES_API_URL: "{{ lookup('env','CLOUDRU_QUOTES_API_URL') }}"
+       CLOUDRU_IAM_API_URL: "{{ lookup('env','CLOUDRU_IAM_API_URL') }}"
+       CLOUDRU_BAREMETAL_API_URL: "{{ lookup('env','CLOUDRU_BAREMETAL_API_URL') }}"
+       CLOUDRU_MK8S_API_URL: "{{ lookup('env','CLOUDRU_MK8S_API_URL') }}"
+       CLOUDRU_DNS_API_URL: "{{ lookup('env','CLOUDRU_DNS_API_URL') }}"
+       CLOUDRU_NLB_API_URL: "{{ lookup('env','CLOUDRU_NLB_API_URL') }}"
+       CLOUDRU_KAFKA_API_URL: "{{ lookup('env','CLOUDRU_KAFKA_API_URL') }}"
+       CLOUDRU_REDIS_API_URL: "{{ lookup('env','CLOUDRU_REDIS_API_URL') }}"
+       CLOUDRU_S3_API_URL: "{{ lookup('env','CLOUDRU_S3_API_URL') }}"
+       IPA_ADDER: "{{ lookup('env','IPA_ADDER') }}"
+       IPA_ADDER_PASSWORD: "{{ lookup('env','IPA_ADDER_PASSWORD') }}"
+
+
+
+

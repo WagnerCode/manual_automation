@@ -1,0 +1,7 @@
+resource "cloudru_evolution_compute_placement_group" "placement_group_{{ config.vm_params[0].ogid }}" {
+  #policy      = "soft-anti-affinity"
+  policy      = "PLACEMENT_GROUP_POLICY_SOFT_ANTI_AFFINITY"
+  description = "Placement group for cluster config.vm_params[0].ogid"
+  project_id  = "{{ config.vm_params[0].project_id }}"
+  name        = "placement_group_{{ config.vm_params[0].ogid }}"
+}

@@ -1,0 +1,27 @@
+- block:
+#  - include_tasks: ../helper/clean_dir.yml
+#    vars:
+#      dir: "{{ hostvars[inventory_hostname][role_name].installdir }}"
+  - name: Unpack from archive
+    become: yes
+    become_user: "{{ becomeuser | default (kafka_user) }}"
+    unarchive:
+      src: "{{ tmp_dir }}/{{ original_distr | default(role_name) }}/{{ hostvars[inventory_hostname][role_name].distr }}"
+      dest: "{{ hostvars[inventory_hostname][role_name].installdir }}"
+      remote_src: yes
+  - name: Check unpack
+    become: yes
+    become_user: "{{ becomeuser | default (kafka_user) }}"
+    shell: echo $(find -maxdepth 1 -mindepth 1 -type f | wc -l; find -maxdepth 1 -mindepth 1 -type d | wc -l)
+    args:
+      chdir: "{{ hostvars[inventory_hostname][role_name].installdir }}"
+    register: check_unpack
+  - name: Move files one level up from directory
+    become: yes
+    become_user: "{{ becomeuser | default (kafka_user) }}"
+    shell: DIR=$(ls); mv "$DIR"/* ./; rm -rf "$DIR"
+    args:
+      chdir: "{{ hostvars[inventory_hostname][role_name].installdir }}"
+    when: check_unpack.stdout == "0 1" # 0 files and 1 dir
+  tags: always
+

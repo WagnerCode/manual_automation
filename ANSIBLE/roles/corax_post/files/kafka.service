@@ -1,0 +1,17 @@
+[Unit]
+Description=kafka service
+After=network.service
+
+[Service]
+WorkingDirectory=/pub/opt/Apache/kafka
+Type=forking
+User=kafka
+Group=kafka
+#ExecStart=/pub/opt/Apache/kafka/bin/kafka-server-start -daemon /pub/opt/Apache/kafka/etc/kafka/server.properties
+ExecStart=/pub/opt/Apache/kafka/bin/kafka-server-start-jmx -daemon /pub/opt/Apache/kafka/etc/kafka/server.properties
+ExecStop=/pub/opt/Apache/kafka/bin/kafka-server-stop
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

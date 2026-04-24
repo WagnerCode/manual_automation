@@ -1,0 +1,23 @@
+resource "cloudru_evolution_compute_subnet" "{{ config.vm_params[0].stand_type }}-{{ config.vm_params[0].service_id }}-{{ config.vm_params[0].gis_code }}-{{ config.vm_params[0].ogid }}" {
+  project_id = "{{ config.vm_params[0].project_id }}"
+
+  # Обязательные
+  name = "{{ config.vm_params[0].stand_type }}-{{ config.vm_params[0].service_id }}-{{ config.vm_params[0].gis_code }}-{{ config.vm_params[0].ogid }}"
+
+  zone_identifier = {
+    name = "{{ config.vm_params[0].az }}"
+  }
+
+  # Опциональные
+  description    = "Subnet {{ config.net_params[0].subnet }} for {{ config.vm_params[0].service_id }} cluster {{ config.vm_params[0].ogid }}"
+  subnet_address = "{{ config.net_params[0].subnet }}"
+  routed_network = true
+  default        = true
+  #vpc_id         = data.cloudru_evolution_vpc_vpc_collection.vpc_default.vpcs[0].id
+  vpc_id         = "{{ vpc_id }}"
+
+  dns_servers = {
+    value = [ "{{ dns_servers[0] }}", "{{ dns_servers[1] }}" ]
+  }
+}
+

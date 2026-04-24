@@ -1,0 +1,156 @@
+- name: Trust wheel group for passwordless sudo
+  become: yes
+  lineinfile:
+    path: /etc/sudoers
+    regexp: '^WHEEL_USERS\s+ALL=\(ALL\)\s+ALL'
+    line: "WHEEL_USERS ALL=(ALL) NOPASSWD: ALL"
+
+- name: Configure Chrony
+  become: yes
+  ansible.builtin.template:
+    src: templates/chrony_conf.tmpl
+    dest: "/etc/chrony.conf"
+    #owner: root
+    #group: root
+    mode: 0644
+
+- name: Restart Chrony
+  become: yes
+  service:
+    name: chrony
+    state: restarted
+
+
+- name: Hosts file
+  become: yes
+  ansible.builtin.template:
+     src: templates/hosts.tmpl
+     dest: /etc/hosts
+     owner: root
+     group: root
+     mode: 0644
+
+- name: APT sources list
+  become: yes
+  copy:
+     src: templates/sources.list
+     dest: /etc/apt/sources.list
+     owner: root
+     group: root
+     mode: '0644'
+
+- name: APT update
+  become: yes
+  command: "apt-get update"
+
+- name: APT install packages
+  become: yes
+  package:
+    name:
+    - freeipa-client
+    - zip
+    - java-17-openjdk-headless
+    - unzip
+    - sshpass
+    - jq
+    - acl
+    - ansible
+    state: present
+
+- name: Control sudo public
+  become: yes
+  shell:
+    cmd: 'control sudo public'
+
+- name: Set FQDN hostanme
+  become: yes
+  shell:
+    cmd: 'hostnamectl hostname {{inventory_hostname}}.{{domain}}'
+
+
+- name: Start and enable certmonger
+  become: yes
+  service:
+    name: certmonger
+    enabled: true
+    state: started
+
+
+#- name: Find unused disks
+#  set_fact:
+#    unused_disks: "{{ unused_disks | default([]) + ['/dev/'+item.key]}}"
+#  when: 
+#  - not item.value.partitions
+##  - not item.value.holders | deafault([])
+#  - item.key | regex_search('^vd|nvme|sd')
+#  loop: "{{ ansible_devices | dict2items }}"
+
+#- name: Show unused disks
+#  debug:
+#    var: unused_disks
+
+
+- name: Create a partition 
+  become: yes
+  community.general.parted:
+    align: "optimal"
+    device: "{{ config.vm_params[0].hdd_data_device }}"
+    label: "gpt"
+    name: data
+    part_start: "0%"
+    part_end: "100%"
+    state: "present"
+    unit: "%"
+    number: 1
+
+- name: Create Physical Volume
+  become: yes
+  community.general.lvm_pv:
+    device: "{{ config.vm_params[0].hdd_data_device }}1"
+    state: "present"
+
+- name: Create Volume Group
+  become: yes
+  community.general.lvg:
+    vg: "vg_data"
+    pvs: "{{ config.vm_params[0].hdd_data_device }}1"
+
+- name: Create Logical Volume
+  become: yes
+  community.general.lvol:
+    vg: "vg_data"
+    lv: "lv_data"
+    size: "100%VG"
+
+- name: Create filesystem on the data LV
+  become: yes
+  community.general.filesystem:
+    fstype: "ext4"
+    dev: "/dev/vg_data/lv_data"
+
+- name: Check if Cluster Type is Kafka - for now only Kafka is supported.
+  fail:
+    msg: "Only Kafka Cluster type is supported at the moment. We have no idea where to mount data disk for other types of clusters. Must be added later."
+  when: config.vm_params[0].cluster_type != "kafka"
+
+- name: Create MountPoint
+  become: yes
+  file:
+    path: "/pub"
+    state: "directory"
+    mode: "0755"
+    owner: "root"
+    group: "root"
+
+- name: Mount filesystem
+  become: yes
+  ansible.posix.mount:
+    path: "/pub"
+    src: "/dev/vg_data/lv_data"
+    fstype: "ext4"
+    state: "mounted"
+
+  
+
+
+

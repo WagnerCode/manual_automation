@@ -1,0 +1,4 @@
+data "cloudru_evolution_compute_image_collection" "{{ inventory_hostname }}_image" {
+  project_id = "{{ config.vm_params[0].project_id }}"
+  filter = "name={{ config.vm_params[0].image_name }}"
+}

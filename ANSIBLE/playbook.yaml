@@ -1,0 +1,77 @@
+---
+
+- name: Corax cluster installation
+  become: false
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Checking inventory and env variables
+      tags:
+      - always      
+      include_role:
+        name: check_inventory
+        apply:
+          tags:
+          - always
+    - name: Check and create Cloud.Ru entities
+      tags:
+      - tf_configs
+      include_role:
+        name: check_cloudru_entities
+        apply:
+          tags:
+          - tf_configs
+    - name: Terraform configs apply
+      tags:
+      - tf
+      include_role:
+        name: terraform
+        apply:
+          tags:
+          - tf
+    - name: OS config
+      include_role:
+        name: os_config
+        apply:
+          tags:
+          - os_config
+      tags:
+      - os_config
+     
+    - name: IPA Domain
+      tags:
+      - ipadomain
+      include_role:
+        name: ipadomain
+        apply:
+          tags:
+          - ipadomain
+      
+    - name: Install Corax
+      tags:
+      - corax
+      include_role:
+        name: corax
+        apply:
+          tags:
+          - corax
+
+    - name: Corax post install
+      tags:
+      - corax_post
+      include_role:
+        name: corax_post
+        apply:
+          tags:
+          - corax_post
+ 
+#- name: Check env var
+#  become: false
+#  hosts: all
+#  gather_facts: false
+#  tasks:
+#    - name: Collecting information about existing Cloud.ru entities
+#      debug:
+#         var: tf_vars
+
+

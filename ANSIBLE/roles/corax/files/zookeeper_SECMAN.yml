@@ -1,0 +1,121 @@
+- block:
+#  - include_tasks: ../helper/clean_dir.yml
+#    vars:
+#      dir: "{{ zookeeper.installdir }}/ssl"
+#      becomeuser: "{{ zookeeper_user }}"
+
+  - name: Create SSL path
+    become: yes
+    become_user: "{{ zookeeper_user }}"
+    file:
+      path: "{{ zookeeper.installdir }}/ssl"
+      state: directory
+      mode: 0750
+
+  - name: Put pass-truststore to secman
+    run_once: yes
+    when: "{{ config_secman.put_enable | d (false) }}"
+    include_tasks: "{{ role_path }}/../../helper/secman_put_kv.yml"
+    vars:
+      secman_url:          "{{ config_secman.endpoint }}"
+      secman_role_id:      "{{ config_secman.connectDict }}"
+      secman_nm:           "{{ config_secman.namespace }}"
+      secman_auth_path:    "{{ config_secman.auth_path }}"
+      secman_kv_path:      "{{ config_secman.path }}/{{ config_secman.secret_name }}"
+      secman_kv_data:
+        "truststore.password": "{{ zookeeper.trustStorePassword }}"
+
+  - name: Get secman-truststore
+    include_tasks: "{{ role_path }}/../../helper/secman_get_truststore.yml"
+    vars:
+      becomeuser:          "{{ zookeeper_user }}"
+      truststore_location: "{{ zookeeper.installdir }}/{{ zookeeper.trustStorePath }}"
+      truststore_psw:      "{{ zookeeper.trustStorePassword }}"
+      secman_fetchrole:    "{{ config_secman.fetchrole }}"
+      secman_fetchmount:   "{{ config_secman.fetchmount}}"
+      secman_url:          "{{ config_secman.endpoint }}"
+      secman_auth_path:    "{{ config_secman.auth_path }}"
+      secman_nm:           "{{ config_secman.namespace }}"
+      secman_ttl:          "{{ config_secman.tokenttl }}"
+      secman_role_id:      "{{ config_secman.connectDict }}"
+      cert_request:
+        "common_name": "{{ config_secman.fetchcn }}"
+        "format": "jks"
+        "private_key_format": "pem"
+        "passphrase": "{{ zookeeper.trustStorePassword }}"
+
+  - name: Change zookeeper.properties for SECMAN
+    become: yes
+    become_user: "{{ zookeeper_user }}"
+    ini_file:
+      path:   "{{ zookeeper.installdir }}/config/zookeeper.properties"
+      section:
+      option: "{{ item.key }}"
+      value:  "{{ item.value|default('') }}"
+      state:  "{{ item.state|default('present') }}"
+    with_items:
+      - { key: "security.encoding.key",                       value: "{{ zookeeper.installdir }}/config/encrypt.pass" }
+      - { key: "security.encoding.class",                     value: "{{ config_decode.security_encoding_class }}" }
+      - { key: "security.encoding.salt",                      value: "{{ config_decode.security_encoding_salt }}" }
+
+      - { key: "clientPort",                                  state: "absent" }
+      - { key: "secman.token.path",                           state: "absent" }
+      - { key: "ssl.trustStore.password",                     state: "absent" }
+      - { key: "ssl.quorum.trustStore.password",              state: "absent" }
+
+      - { key: "secureClientPort",                            value: "{{ zookeeper.port }}" }
+      - { key: "ssl.trustStore.location",                     value: "{{ zookeeper.installdir }}/{{ zookeeper.trustStorePath }}" }
+      - { key: "ssl.trustStore.password.encrypted",           value: "${my_secman:truststore.password}" }
+      - { key: "ssl.hostnameVerification",                    value: "{{ zookeeper.ssl_hostnameVerification }}"}
+      - { key: "ssl.ciphersuites",                            value: "{{ zookeeper.ssl_ciphersuites }}" }
+
+      - { key: "sslQuorum",                                   value: "{{ zookeeper.sslQuorum }}" }
+      - { key: "client.portUnification",                      value: "{{ zookeeper.ssl_client_portUnification }}"}
+      - { key: "serverCnxnFactory",                           value: "{{ zookeeper.serverCnxnFactory }}" }
+      - { key: "ssl.quorum.context.supplier.class",           value: "ru.sbrf.kafka.zk.secman.SecmanSSLContextSupplier" }
+      - { key: "ssl.quorum.trustStore.location",              value: "{{ zookeeper.installdir }}/{{ zookeeper.trustStorePath }}" }
+      - { key: "ssl.quorum.trustStore.password.encrypted",    value: "${my_secman:truststore.password}"}
+      - { key: "ssl.quorum.hostnameVerification",             value: "{{ zookeeper.ssl_quorum_hostnameVerification }}" }
+      - { key: "ssl.quorum.ciphersuites",                     value: "{{ zookeeper.ssl_quorum_ciphersuites }}" }
+      - { key: "ssl.quorum.enabledProtocols",                 value: "{{ zookeeper.ssl_quorum_enabledProtocols }}" }
+      - { key: "ssl.quorum.clientAuth",                       value: "need" }
+
+      - { key: "X509AuthenticationProvider.superUser",        value: "User:{{ dname.stdout | regex_replace(', *', ',') }}" }
+      - { key: "authProvider.x509",                           value: "ru.sbrf.kafka.zk.secman.SecmanAuthenticationProvider" }
+      - { key: "ssl.authProvider",                            value: "{{ zookeeper.ssl_authProvider }}" }
+      - { key: "ssl.enabledProtocols",                        value: "{{ zookeeper.ssl_enabledProtocols }}" }
+      - { key: "ssl.quorum.clientAuth",                       value: "{{ zookeeper.ssl_quorum_clientAuth }}"}
+      - { key: "client.portUnification",                      value: "{{ zookeeper.plaintext_client_portUnification }}" }
+
+      - { key: "config.providers",                            value: "{{ config_decode.provider  }},{{ config_secman.provider  }}"}
+
+      - { key: "config.providers.{{ config_decode.provider  }}.class",               value: "{{ config_decode.class  }}"}
+      - { key: "config.providers.{{ config_decode.provider  }}.param.security.encoding.key",   value: "{{ zookeeper.installdir }}/config/encrypt.pass" }
+      - { key: "config.providers.{{ config_decode.provider  }}.param.security.encoding.class", value: "{{ config_decode.security_encoding_class }}"}
+      - { key: "config.providers.{{ config_decode.provider  }}.param.security.encoding.salt",  value: "{{ config_decode.security_encoding_salt }}"}
+
+      - { key: "config.providers.{{ config_secman.provider }}.class",            value: "{{ config_secman.class      }}"}
+      - { key: "config.providers.{{ config_secman.provider }}.param.endpoint",   value: "{{ config_secman.endpoint }}"  }
+      - { key: "config.providers.{{ config_secman.provider }}.param.token.path", state: "absent" }
+      - { key: "config.providers.{{ config_secman.provider }}.param.namespace",  value: "{{ config_secman.namespace }}" }
+      - { key: "config.providers.{{ config_secman.provider }}.param.data.path",  value: "{{ config_secman.path }}/{{ config_secman.secret_name }}"      }
+      - { key: "config.providers.{{ config_secman.provider }}.param.security.encoding.key", value: "{{ zookeeper.installdir }}/config/encrypt.pass" }
+      - { key: "config.providers.{{ config_secman.provider }}.param.role_id",          value: "${decode:{{ config_secman.connectDictEncrypted.role }}}" }
+      - { key: "config.providers.{{ config_secman.provider }}.param.secret_id",        value: "${decode:{{ config_secman.connectDictEncrypted.secret }}}" }
+      - { key: "config.providers.{{ config_secman.provider }}.param.auth.path",        value: "{{ config_secman.auth_path }}" }
+
+
+      - { key: "security.encoding.key",      value: "{{ zookeeper.installdir }}/config/encrypt.pass" }
+      - { key: "security.encoding.class",    value: "{{ config_decode.security_encoding_class }}" }
+      - { key: "security.encoding.salt",     value: "{{ config_decode.security_encoding_salt }}" }
+
+      - { key: "secman.endpoint",            value: "{{ config_secman.endpoint }}"  }
+      - { key: "secman.namespace",           value: "{{ config_secman.namespace }}" }
+      - { key: "secman.fetch.role",          value: "{{ config_secman.fetchrole }}" }
+      - { key: "secman.fetch.mount.path",    value: "{{ config_secman.fetchmount }}"}
+      - { key: "secman.fetch.cn",            value: "{{ config_secman.fetchcn }}"   }
+      - { key: "secman.role_id",             value: "${decode:{{ config_secman.connectDictEncrypted.role }}}" }
+      - { key: "secman.secret_id",           value: "${decode:{{ config_secman.connectDictEncrypted.secret }}}" }
+      - { key: "secman.auth.path",           value: "{{ config_secman.auth_path }}" }
+  tags: install
+

@@ -1,0 +1,247 @@
+- name: Extract DSTR from the archive
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  unarchive:
+    src: "{{ config.vm_params[0].dstr_path }}{{ config.vm_params[0].dstr_file }}"
+    dest: "/pub"
+    creates: "/pub/corax/"
+
+
+# Repeat below two steps. Where executed before, but under different tag. To make all tags working consistently, doing the same again.
+
+- name: Read keystore password
+  delegate_to: localhost
+  run_once: true
+  slurp:
+    src: '{{ playbook_dir }}/secrets/ks_secret.txt'
+  register: keystore_file_content
+
+- name: Register keystore password
+  delegate_to: localhost
+  run_once: true
+  set_fact: 
+    keystore_password: "{{ keystore_file_content.content | b64decode | trim }}"
+
+- name: Set FQDN
+  set_fact:
+    ansible_facts:
+      fqdn: "{{ inventory_hostname }}.{{ domain }}"
+
+- name: Set corax dir
+  set_fact:
+     corax_dir: "/pub/corax/"
+
+- name: "Create user {{ kafka_user }}"
+  become: yes
+  ansible.builtin.user:
+    name: "{{ kafka_user }}"
+
+- name: Clean kafka installdir
+  become: yes
+  file: 
+    path: "{{kafka.installdir}}"
+    state: "absent"
+
+- name: Clean zookeeper installdir
+  become: yes
+  file: 
+    path: "{{zookeeper.installdir}}"
+    state: "absent"
+
+- name: Create SSL folder in the kafka installdir
+  become: yes
+  file:
+    #path: "{{ corax_dir }}inventories/ssl"
+    path: "{{kafka.installdir}}/ssl"
+    state: directory
+    mode: '0755'
+    owner: "{{ kafka_user }}" 
+    group: "{{ kafka_group }}" 
+
+- name: Create SSL folder in the zookeeper installdir
+  become: yes
+  file:
+    #path: "{{ corax_dir }}inventories/ssl"
+    path: "{{zookeeper.installdir}}/ssl"
+    state: directory
+    mode: '0755'
+    owner: "{{ kafka_user }}" 
+    group: "{{ kafka_group }}" 
+
+
+#- name: Run Corax_Prepare task
+#  include_tasks: 
+#    file: "prepare_corax.yaml"
+#    apply:
+#      become: yes
+
+- name: Create group_vars on the first host 
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0] }}"
+  template:
+    src: templates/all.tmpl
+    dest: "{{ corax_dir }}inventories/group_vars/all.yaml"
+
+- name: Create Inventory on the first host 
+  become: yes
+  #run_once: yes
+  delegate_to: "{{ ansible_play_batch[0] }}"
+  template:
+    src: templates/inventory.tmpl
+    dest: "{{ corax_dir }}inventories/inventory.ini"
+  retries: 3
+  delay: 5
+  throttle: 1
+
+- name: Copy modified helper/unpack.yml - no clean_dir there anymore
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  copy:
+    src: "files/unpack.yml"
+    dest: "{{ corax_dir }}helper/unpack.yml"
+
+- name: Copy modified roles/zookeeper/tasks/zookeeper_SECMAN.yml - no clean_dir there anymore
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  copy:
+    src: "files/zookeeper_SECMAN.yml"
+    dest: "{{ corax_dir }}roles/zookeeper/tasks/zookeeper_SECMAN.yml"
+
+- name: Copy modified roles/zookeeper/tasks/zookeeper_SSL.yml - no Upload .jks here
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  copy:
+    src: "files/zookeeper_SSL.yml"
+    dest: "{{ corax_dir }}roles/zookeeper/tasks/zookeeper_SSL.yml"
+
+- name: Copy modified roles/kafka/tasks/kafka_SSL.yml - no Upload .jks here
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  copy:
+    src: "files/kafka_SSL.yml"
+    dest: "{{ corax_dir }}roles/kafka/tasks/kafka_SSL.yml"
+
+
+- name: Copy modified ansible.cfg
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  copy:
+    src: "files/ansible.cfg"
+    dest: "{{ corax_dir }}ansible.cfg"
+
+
+
+
+#- name: Ansible Play Batch
+#  debug:
+#    var: ansible_play_batch
+
+- name: Create SSH keys on first host
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  community.crypto.openssh_keypair:
+    path: "~/.ssh/id_ed25519"
+    type: "ed25519"
+    state: "present"
+  register: ssh_key_info_host0
+
+- name: Trust first host SSH key
+  lineinfile:
+    line: "{{ ssh_key_info_host0.public_key }}"
+    path: "~/.ssh/authorized_keys"
+
+
+- name: Run prepare_corax.yaml
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  ansible.builtin.shell: "ansible-playbook -i inventories/inventory.ini prepare_corax.yaml"
+  args:
+    chdir: "{{ corax_dir }}"
+
+- name: Run kafka-zookeeper-SE.yml -t enabled_service
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  ansible.builtin.shell: "ansible-playbook -i inventories/inventory.ini playbooks/kafka-zookeeper-SE.yml -t enabled_service"
+  args:
+    chdir: "{{ corax_dir }}"
+
+- name: Copy truststore to hosts kafka istalldir
+  become: yes
+  copy:
+    src: "{{ playbook_dir }}/secrets/kafka.truststore.jks"
+    dest: "{{kafka.installdir}}/ssl/kafka.truststore.jks"
+    #dest: "{{ corax_dir }}inventories/ssl/kafka.truststore.jks"
+
+- name: Copy keystore to hosts kafka istalldir
+  become: yes
+  copy:
+    #src: "/etc/keystores/{{ ansible_facts['fqdn'] }}.jks"
+    src: "{{ playbook_dir }}/secrets/kafka.keystore.jks"
+    dest: "{{kafka.installdir}}/ssl/kafka.keystore.jks"
+    #dest: "{{ corax_dir }}inventories/ssl/kafka.keystore.jks"
+    #remote_src: yes
+
+- name: Copy truststore to hosts zookeeper istalldir
+  become: yes
+  copy:
+    src: "{{ playbook_dir }}/secrets/kafka.truststore.jks"
+    dest: "{{zookeeper.installdir}}/ssl/kafka.truststore.jks"
+    #dest: "{{ corax_dir }}inventories/ssl/kafka.truststore.jks"
+
+- name: Copy keystore to hosts zookeeper istalldir
+  become: yes
+  copy:
+    #src: "/etc/keystores/{{ ansible_facts['fqdn'] }}.jks"
+    src: "{{ playbook_dir }}/secrets/kafka.keystore.jks"
+    dest: "{{zookeeper.installdir}}/ssl/kafka.keystore.jks"
+    #dest: "{{ corax_dir }}inventories/ssl/kafka.keystore.jks"
+    #remote_src: yes
+ 
+
+
+
+- name: Run kafka-zookeeper-SE.yml
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  ansible.builtin.shell: "ansible-playbook -i inventories/inventory.ini playbooks/kafka-zookeeper-SE.yml"
+  args:
+    chdir: "{{ corax_dir }}"
+
+#- name: Run playbooks/crxsr.yml -t root,install,start
+#  become: yes
+#  run_once: yes
+#  delegate_to: "{{ ansible_play_batch[0]}}"
+#  ansible.builtin.shell: "ansible-playbook -i inventories/inventory.ini playbooks/crxsr.yml -t root,install,start"
+#  args:
+#    chdir: "{{ corax_dir }}"
+
+#- name: Run playbooks/crxui.yml -t root,install
+#  become: yes
+#  run_once: yes
+#  delegate_to: "{{ ansible_play_batch[0]}}"
+#  ansible.builtin.shell: "ansible-playbook -i inventories/inventory.ini playbooks/crxui.yml -t root,install"
+#  args:
+#    chdir: "{{ corax_dir }}"
+
+- name: Run post_install_corax.yaml
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  ansible.builtin.shell: "ansible-playbook -i inventories/inventory.ini post_install_corax.yaml"
+  args:
+    chdir: "{{ corax_dir }}"
+
+
+
+

@@ -1,0 +1,177 @@
+- name: Check if VMs exist
+  delegate_to: localhost
+  script: "{{ playbook_dir}}/scripts/check_entity.py -a compute -q vms -m name -v {{ inventory_hostname }}" 
+  register: vm_exists
+  ignore_errors: True
+
+- name: Show if VM exists
+  debug:
+    var: vm_exists
+  when: vm_exists.rc>0
+
+- name: Check if Subnet exist
+  delegate_to: localhost
+  script: "{{ playbook_dir}}/scripts/check_entity.py -a compute -q subnets -m subnet_address -v {{ config.net_params[0].subnet }}" 
+  register: subnet_exists
+  ignore_errors: True
+
+- name: Show if Subnet exists
+  debug:
+    var: subnet_exists
+#  when: subnet_exists.rc>0
+
+- name: Show if Subnet exists
+  debug:
+    msg: "{{ playbook_dir}}/scripts/check_entity.py -a compute -q flavors -m oversubscription -v {{ config.vm_params[0].oversubscription }} -m cpu -v {{ config.vm_params[0].cpu }} -m ram -v {{ config.vm_params[0].ram }}"
+#  when: vm_exists.rc>0 
+
+- name: Find flavor
+  delegate_to: localhost
+  script: "{{ playbook_dir}}/scripts/check_entity.py -a compute -q flavors -m oversubscription -v {{ config.vm_params[0].oversubscription }} -m cpu -v {{ config.vm_params[0].cpu }} -m ram -v {{ config.vm_params[0].ram }}"
+  register: flavor_full
+#  when: vm_exists.rc>0
+
+- name: Parse flavor
+  set_fact:
+     flavor_data: "{{ flavor_full.stdout | from_json }}"
+#  when: vm_exists.rc>0
+
+- name: Assign flavor
+  delegate_to: localhost
+  set_fact:
+   vm_flavor: "{{ flavor_data[\"name\"] }}"
+#  when: vm_exists.rc>0
+
+- name: Find vpc
+  delegate_to: localhost
+  script: "{{ playbook_dir}}/scripts/check_entity.py -a vpc -q vpcs -m name -v Default"
+  register: vpc_full
+#  when: vm_exists.rc>0
+    
+- name: Parse vpc
+  set_fact:
+     vpc_data: "{{ vpc_full.stdout | from_json }}"
+#  when: vm_exists.rc>0
+
+- name: Assign vpc
+  delegate_to: localhost
+  set_fact:
+    vpc_id: "{{ vpc_data[\"id\"] }}"
+#  when: vm_exists.rc>0
+
+- name: Show if Subnet exists
+  debug:
+    var: vm_flavor
+#  when: vm_exists.rc>0 
+
+- name: Create Terraform directory
+  delegate_to: localhost
+  run_once: true
+  file:
+    path: "{{ playbook_dir}}/tf"
+    state: directory
+    mode: '0755'
+
+- name: Create Subnet TF file
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.template:
+    src: templates/subnet.tmpl
+    dest: "{{ playbook_dir }}/tf/subnet_{{ config.vm_params[0].ogid }}.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: subnet_exists.rc>0
+
+- name: Create interface files
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/interface.tmpl
+    dest: "{{ playbook_dir }}/tf/interface_{{ inventory_hostname }}.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: subnet_exists.rc>0
+
+- name: Create placement group TF file
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/placement_group.tmpl
+    dest: "{{ playbook_dir}}/tf/placement_group_{{ config.vm_params[0].ogid }}.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+
+- name: Create security group TF file
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/security_group.tmpl
+    dest: "{{ playbook_dir}}/tf/security_group_{{ config.vm_params[0].ogid }}.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+
+- name: Create main.tf file
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/main.tmpl
+    dest: "{{ playbook_dir}}/tf/main.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+
+#- name: Create vpc_default.tf file
+#  delegate_to: localhost
+#  ansible.builtin.template:
+#    src: templates/data_vpc.tmpl
+#    dest: "{{ playbook_dir}}/tf/data_vpc_default.tf"
+#    #owner: root
+#    #group: root
+#    mode: 0644
+#  when: vm_exists.rc>0
+
+
+- name: Create datasource for image name
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/image.tmpl
+    dest: "{{ playbook_dir}}/tf/{{ inventory_hostname }}_image.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+
+
+- name: Create Data disk TF files
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/data_disk.tmpl
+    dest: "{{ playbook_dir}}/tf/{{ inventory_hostname }}_data_disk.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+
+- name: Create System disk TF files
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/disk.tmpl
+    dest: "{{ playbook_dir}}/tf/{{ inventory_hostname }}_system_disk.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+
+- name: Create VMs TF files
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: templates/vm.tmpl
+    dest: "{{ playbook_dir}}/tf/{{ inventory_hostname }}.tf"
+    #owner: root
+    #group: root
+    mode: 0644
+#  when: vm_exists.rc>0
+

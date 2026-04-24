@@ -1,0 +1,22 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # Kafka Broker metrics
+  - pattern: "kafka.server<type=(.+), name=(.+)><>(Count|Value|MeanRate|OneMinuteRate|FiveMinuteRate|FifteenMinuteRate|Percentile|Mean|Min|Max|StdDev|50thPercentile|75thPercentile|95thPercentile|98thPercentile|99thPercentile|999thPercentile):"
+    name: kafka_server_$1_$2
+    type: GAUGE
+  
+  # Producer/Consumer metrics
+  - pattern: "kafka.(.+).<type=(.+), name=(.+)><>(Count|Value|MeanRate|OneMinuteRate|FiveMinuteRate|FifteenMinuteRate|Percentile|Mean|Min|Max|StdDev|50thPercentile|75thPercentile|95thPercentile|98thPercentile|99thPercentile|999thPercentile):"
+    name: kafka_$1_$2_$3
+    type: GAUGE
+  
+  # JVM metrics
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>committed: (\d+)'
+    name: jvm_memory_heap_committed
+    value: $1
+    type: GAUGE
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>used: (\d+)'
+    name: jvm_memory_heap_used
+    value: $1
+    type: GAUGE

@@ -1,0 +1,278 @@
+resource "cloudru_evolution_compute_security_group" "sg-kafka-digitalgov-smevpovd-aaaah" {
+  zone_identifier = {
+    # Нужно заполнить одно из значений - id, name.
+    #id   = "8f234696-1274-4de2-999e-b43618f7802f"
+    name = "ru.AZ-3"
+  }
+  project_id  = "c8283765-b545-415e-a8e8-0efdb1b8f10d"
+  name        = "sg-kafka-digitalgov-smevpovd-aaaah"
+  description = "Security group for the Cluster aaaah"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_1" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id 
+  remote_security_group_identifier = {
+    # Нужно заполнить одно из значений - id, name.
+    id   = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+    #name = "971d59be-4f6d-4dd9-a7c7-46abf55dbeee"
+  }
+  description      = "Intra SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  #remote_ip_prefix = "6d6d9176-685d-4c32-a336-3505bc9ab0c8"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_2" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "SUP SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_ANY"
+  remote_ip_prefix = "10.246.0.0/20"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_3" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Platform SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.244.0.0/22"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_4" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "IAM SE"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.10.11.0/24"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_5" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "IAM SE"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.10.12.0/23"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_6" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "JAM Cloud.Ru SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "37.18.107.197/32"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_7" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "JAM Cloud.Ru SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "185.71.64.201/32"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_8" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Platform SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "37.18.73.105/32"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_8_1" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Cloud-init rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "169.254.169.254/32"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "80:80"
+}
+
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_9" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  remote_security_group_identifier = {
+    # Нужно заполнить одно из значений - id, name.
+    id   = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+    #name = "971d59be-4f6d-4dd9-a7c7-46abf55dbeee"
+  }
+  description      = "Intra SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  #remote_ip_prefix = "6d6d9176-685d-4c32-a336-3505bc9ab0c8"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_10" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Admin SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.246.7.7/32"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "22:22"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_11" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Gitlab SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.246.0.160/27"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "22:22"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_12" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Jump Hosts SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.246.8.0/23"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "22:22"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_13" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "GIS SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.193.0.0/20"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "9093:9093"
+}
+
+#resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_14" {
+#  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+#  description      = "Cloud-init rule"
+#  ether_type       = "ETHER_TYPE_IPV4"
+#  ip_protocol      = "IP_PROTOCOL_TCP"
+#  remote_ip_prefix = "169.254.169.254/32"
+#  direction        = "TRAFFIC_DIRECTION_INGRESS"
+#  port_range       = "any"
+#}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_15" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "IAM SE"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_ANY"
+  remote_ip_prefix = "10.10.11.0/24"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_16" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "IAM SE"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_ANY"
+  remote_ip_prefix = "10.10.12.0/23"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_17" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "GIS SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "10.193.0.0/20"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_18" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "JAM Cloud.Ru SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "37.18.107.197/32"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_19" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "JAM Cloud.Ru SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "185.71.64.201/32"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_20" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "Platform SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_TCP"
+  remote_ip_prefix = "37.18.73.105/32"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_21" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "SUP SG rule"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_ANY"
+  remote_ip_prefix = "10.246.0.0/20"
+  direction        = "TRAFFIC_DIRECTION_INGRESS"
+  port_range       = "any"
+}
+
+#resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_22" {
+#  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+#  description      = "Local PAAS subnet"
+#  ether_type       = "ETHER_TYPE_IPV4"
+#  ip_protocol      = "IP_PROTOCOL_ANY"
+#  remote_ip_prefix = "10.193.32.0/28"
+#  direction        = "TRAFFIC_DIRECTION_INGRESS"
+#  port_range       = "any"
+#}
+
+#resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_23" {
+#  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+#  description      = "Local PAAS subnet"
+#  ether_type       = "ETHER_TYPE_IPV4"
+#  ip_protocol      = "IP_PROTOCOL_ANY"
+#  remote_ip_prefix = "10.193.32.0/28"
+#  direction        = "TRAFFIC_DIRECTION_EGRESS"
+#  port_range       = "any"
+#}
+
+resource "cloudru_evolution_compute_security_group_rule" "sg-kafka-digitalgov-smevpovd-aaaah_24" {
+  security_group_id = cloudru_evolution_compute_security_group.sg-kafka-digitalgov-smevpovd-aaaah.id
+  description      = "DHCP"
+  ether_type       = "ETHER_TYPE_IPV4"
+  ip_protocol      = "IP_PROTOCOL_UDP"
+  remote_ip_prefix = "255.255.255.255/32"
+  direction        = "TRAFFIC_DIRECTION_EGRESS"
+  port_range       = "67:67"
+}
+
+
+
+
+
+
+

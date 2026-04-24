@@ -1,0 +1,49 @@
+- name: Copy jmx-exporter.yaml
+  become: yes
+  copy:
+    src: "files/jmx-exporter.yaml"
+    dest: "{{ kafka.installdir }}/config/jmx/"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0644'
+
+- name: Copy kafka-run-class-jmx
+  become: yes
+  copy:
+    src: "files/kafka-run-class-jmx"
+    dest: "{{ kafka.installdir }}/bin/"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0755'
+
+- name: Copy kafka-run-class-jmx
+  become: yes
+  copy:
+    src: "files/kafka-server-start-jmx"
+    dest: "{{ kafka.installdir }}/bin/"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0755'
+
+- name: Copy kafka.service
+  become: yes
+  copy:
+    src: "files/kafka.service"
+    dest: "/etc/systemd/system/"
+    owner: "root"
+    group: "root"
+    mode: '0644'
+
+- name: Install prometheus-jmx-exporter
+  become: yes
+  package:
+    name: "prometheus-jmx-exporter"
+    state: "present"
+
+- name: Restart kafka
+  become: yes
+  systemd_service:
+    name: kafka
+    state: restarted
+    daemon_reload: true
+

@@ -1,0 +1,30 @@
+resource "cloudru_evolution_compute_interface" "interface_{{ inventory_hostname }}" {
+  security_groups_identifiers = {
+    value = [{
+      # Нужно заполнить одно из значений - id, name.
+      id = cloudru_evolution_compute_security_group.sg-{{ config.vm_params[0].cluster_type }}-{{ config.vm_params[0].service_id }}-{{ config.vm_params[0].ogid }}.id
+      #name = "sg-{{ config.vm_params[0].cluster_type }}-{{ config.vm_params[0].service_id }}-{{ config.vm_params[0].ogid }}"
+    }]
+  }
+
+  interface_security_enabled = true
+  ip_address = "{{ (hostsfile | selectattr('host','equalto', inventory_hostname) | first).ipaddr }}"
+
+  subnet_id   = cloudru_evolution_compute_subnet.{{ config.vm_params[0].stand_type }}-{{ config.vm_params[0].service_id }}-{{ config.vm_params[0].gis_code }}-{{ config.vm_params[0].ogid }}.id
+  description = "VM {{ inventory_hostname }} interface"
+  name        = "interface_{{ inventory_hostname }}"
+
+#  vm_id       = cloudru_evolution_compute_vm.{{ inventory_hostname }}.id
+
+  zone_identifier = {
+    # Нужно заполнить одно из значений - id, name.
+    #id   = "03d88664-e91a-4a42-af71-29232677a22d"
+    name = "{{ config.vm_params[0].az }}"
+  }
+  
+  type = "INTERFACE_TYPE_REGULAR"
+  #type = "regular"
+
+  project_id = "{{ config.vm_params[0].project_id }}"
+}
+

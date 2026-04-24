@@ -1,0 +1,3 @@
+type,net_params
+subnet,10.193.32.0/28
+gis_subnet,10.193.0.0/20

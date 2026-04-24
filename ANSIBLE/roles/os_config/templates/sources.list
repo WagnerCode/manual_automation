@@ -1,0 +1,3 @@
+rpm [cert8] http://nexus-infra.admins-infra.common.pd33.udp.gtn/repository/ecp_apt_p_10-2-1_x86-64 c10f2/branch/x86_64 classic gostcrypto
+rpm [cert8] http://nexus-infra.admins-infra.common.pd33.udp.gtn/repository/ecp_apt_p_10-2-1_noarch c10f2/branch/noarch classic
+

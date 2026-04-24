@@ -1,0 +1,189 @@
+- name: Setting IPA domain
+  set_fact:
+    ipaclient_domain: "{{ config.ipa_params[0].domain }}" 
+
+- name: Setting IPA admin principal
+  set_fact:
+    ipaadder_principal: "{{ tf_vars.IPA_ADDER }}" 
+
+- name: Setting IPA admin password
+  set_fact:
+    ipaadder_password: "{{ tf_vars.IPA_ADDER_PASSWORD }}" 
+
+- name: Set FQDN
+  set_fact:
+    ansible_facts:
+      fqdn: "{{ inventory_hostname }}.{{ domain }}"
+
+#- name: Add host to FreeIPA domain
+#  include_role:
+#    name: freeipa.ansible_freeipa.ipaclient
+#    apply:
+#      become: yes
+#  vars:
+#    state: present
+#    ipaclient_packages:
+#    - freeipa-client
+
+- name: Check if machine is already in IPA domain
+  become: yes
+  command: "sssctl domain-list"
+  register: domain_list
+
+- name: Add to domain
+  become: yes
+  shell: "ipa-client-install -U 
+          -p {{ ipaadder_principal }} 
+          -w {{ ipaadder_password }} 
+          --domain={{ domain }}
+          --server=ipa-master-02.coresvc-infra.common.pd34.udp.gtn 
+          --hostname {{ ansible_facts['fqdn']}} 
+          --realm=UDP.GTN 
+          --mkhomedir --enable-dns-updates --force-join"
+  when: domain not in domain_list.stdout
+
+
+- name: Kerberos authentication
+  become: yes
+  command: "kinit -kt /etc/krb5.keytab host/{{ ansible_facts['fqdn']}}"
+
+- name: Create folder for private keys
+  become: yes
+  file:
+    path: "/etc/pki/tls/private/"
+    state: directory
+    mode: '0700'
+    owner: root
+    group: root
+
+- name: Check if certificate is already issued
+  become: yes
+  command: "ipa-getcert list"
+  register: certs_list
+  ignore_errors: yes
+
+
+- name: Issue host certificate
+  become: yes
+  command: "ipa-getcert request -r -f /etc/pki/tls/certs/{{ ansible_facts['fqdn']}}.crt -k /etc/pki/tls/private/{{ ansible_facts['fqdn']}}.key -K host/{{ansible_facts['fqdn']}} -D {{ ansible_facts['fqdn']}}"
+  when: '"/etc/pki/tls/certs/" + ansible_facts["fqdn"] + ".crt" not in certs_list.stdout'
+
+- name: Create folder for keystore secrets
+  delegate_to: localhost
+  run_once: true
+  file:
+    path: "{{ playbook_dir }}/secrets"
+    state: directory
+    mode: '0700'
+
+- name: Check if Keystore secret is already generated
+  delegate_to: localhost
+  run_once: true
+  stat:
+    path: "{{ playbook_dir }}/secrets/ks_secret.txt"
+  register: ks_secret_file
+
+- name: Generate random password for JKS
+  delegate_to: localhost
+  run_once: true
+  set_fact:
+    keystore_password: "{{ lookup('password', '/dev/null length={{ keystore_password_length }} chars=ascii_letters,digits') }}"
+  when: not ks_secret_file.stat.exists
+
+- name: Save keystore passwords
+  delegate_to: localhost
+  run_once: true
+  lineinfile:
+    path: "{{ playbook_dir }}/secrets/ks_secret.txt"
+    line: "{{ keystore_password }}"
+    create: yes
+  when: not ks_secret_file.stat.exists
+
+- name: Read keystore password
+  delegate_to: localhost
+  run_once: true
+  slurp:
+    src: '{{ playbook_dir }}/secrets/ks_secret.txt'
+  register: keystore_file_content
+  when: ks_secret_file.stat.exists
+
+- name: Register keystore password
+  delegate_to: localhost
+  run_once: true
+  set_fact: 
+    keystore_password: "{{ keystore_file_content.content | b64decode | trim }}"
+  when: ks_secret_file.stat.exists
+
+#- name: Debug
+#  ansible.builtin.debug:
+#    var: keystore_password
+
+- name: Remove previous PKCS12 file
+  become: yes
+  file:
+    path: "/tmp/{{ ansible_facts['fqdn'] }}.p12"
+    state: absent
+
+- name: Create PKCS12 bundle
+  become: yes
+  command: "openssl pkcs12 -export -in /etc/pki/tls/certs/{{ ansible_facts['fqdn']}}.crt -inkey /etc/pki/tls/private/{{ ansible_facts['fqdn']}}.key -out /tmp/{{ ansible_facts['fqdn'] }}.p12 -name {{ ansible_facts['fqdn']}} -password pass:{{ keystore_password }}"
+#  no_log: true
+
+- name: Create folder for JKS
+  become: yes
+  file:
+    path: "/etc/keystores"
+    state: directory
+    mode: '0700'
+
+- name: Remove previous JKS file
+  become: yes
+  file:
+    path: "/etc/keystores/{{ ansible_facts['fqdn'] }}.jks"
+    state: absent
+
+- name: Convert PKCS12 to JKS
+  become: yes
+  command: "keytool -importkeystore -srckeystore /tmp/{{ ansible_facts['fqdn'] }}.p12 -srcstoretype PKCS12 -srcstorepass {{ keystore_password }} -destkeystore /etc/keystores/{{ ansible_facts['fqdn'] }}.jks -deststoretype JKS -deststorepass {{ keystore_password }} -destkeypass {{ keystore_password }}"
+
+- name: Remove previous PKCS12 file
+  become: yes
+  file:
+    path: "/tmp/{{ ansible_facts['fqdn'] }}.p12"
+    state: absent
+
+- name: Remove previous kafka.truststore.jks
+  delegate_to: localhost
+  run_once: true
+  file:
+    path: "{{ playbook_dir }}/secrets/kafka.truststore.jks"
+    state: absent
+
+- name: Find all CA certs
+  delegate_to: localhost
+  run_once: true
+  find:
+    path: "{{ role_path }}/files/"
+    patterns: "*.crt"
+  register: trust_ca_files
+
+- name: Show CA files
+  delegate_to: localhost
+  run_once: true
+  debug:
+    var: trust_ca_files
+
+- name: Create truststore on the local machine
+  delegate_to: localhost
+  run_once: true
+  command: "keytool -importcert -noprompt -alias {{ item.path | basename }} -file {{ item.path }} -keystore {{ playbook_dir }}/secrets/kafka.truststore.jks -storepass {{ keystore_password }}"
+  loop: "{{ trust_ca_files.files }}"
+
+- name: Fetch keystore from one of the servers
+  become: yes
+  run_once: yes
+  delegate_to: "{{ ansible_play_batch[0]}}"
+  fetch:
+    src: "/etc/keystores/{{ ansible_facts['fqdn'] }}.jks" 
+    dest: "{{ playbook_dir }}/secrets/kafka.keystore.jks"
+    flat: yes

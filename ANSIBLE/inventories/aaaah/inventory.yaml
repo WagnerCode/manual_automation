@@ -1,0 +1,102 @@
+all:
+  children:
+    corax_aaaah:
+      hosts:
+        kafka-aaaah-01:
+          ansible_host: 10.193.32.4
+          config:
+            interface:
+            - gateway: 10.193.32.1
+              ipaddr: 10.193.32.4
+              name: eth0
+              netmask: 255.255.255.240
+              prefixlen: 28
+              route_gateway: 10.193.32.1
+            ipa_params: &id001
+            - domain: ipa-master-02.coresvc-infra.common.pd34.udp.gtn
+              name: ipa_params
+            net_params: &id002
+            - gis_subnet: 10.193.0.0/20
+              name: net_params
+              subnet: 10.193.32.0/28
+            ssh_key: &id003
+            - name: dk_ssh_key
+              ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDTL2d9J5eHMnk+HZQcn3/7OfjlRFqIYyW8IvrKdaC2OvOssgcadVGAYYjUbUZb6pBx0/bxxqRyfE2ByNBb2b7TL4GuyyavvsvPFBOBETJXx1+WjMwF3lna8xNYX9nSVkOh7uDjX4kB8bIJQyT3ilWfrAJuv7A9pTpXrSQq5MMbTHNHGlVnDIxvFNqUc/5fVgtxGgFDVrEokWSYo6ptxdI+jmS692FdpRhQINLLegBQjO1h6LM3xlM3XkXSEbxujO5Rj/D9xezSyQYfhkwzj3V5wi8ffq5ConvP2AT7g6KnHw9rv2fv/8Cab1nTCLEx527wP5R5XlpZao4yOsILapwg/AAIq8cDaZuhlBzszF2TiAo4gImJSWi2OQZfq60EerpeI0vQ+fFrdyMbRDRF0ZMBklVAkOhi+wizPBs1W+EJTnfsLOCW36a3WAFYvwW6MQvJR0o55xcHEAlUW2Le4Loiou/nE8LX8Jfpr0khGJacehaeQm3burXSy0urE4V9vQM=
+                dkulida@fedora
+            vm_params: &id004
+            - az: ru.AZ-3
+              cluster_type: kafka
+              cpu: '16'
+              domain: agentpodd-platform.tech.pd36.digitalgov.gtn
+              dstr_file: corax_fixed.tar.bz2
+              dstr_path: /home/dkulida/CORAX_DSTR/
+              gis_code: agentpodd
+              hdd: '50'
+              hdd_data: '60'
+              hdd_data_device: /dev/vdb
+              image_name: alt_10.2.1
+              name: vm_params
+              ogid: aaaah
+              oversubscription: '1:3'
+              project_id: c8283765-b545-415e-a8e8-0efdb1b8f10d
+              ram: '32'
+              service_id: digitalgov-smevpovd
+              stand_type: tech
+              user: user1
+        kafka-aaaah-02:
+          ansible_host: 10.193.32.5
+          config:
+            interface:
+            - gateway: 10.193.32.1
+              ipaddr: 10.193.32.5
+              name: eth0
+              netmask: 255.255.255.240
+              prefixlen: 28
+              route_gateway: 10.193.32.1
+            ipa_params: *id001
+            net_params: *id002
+            ssh_key: *id003
+            vm_params: *id004
+        kafka-aaaah-03:
+          ansible_host: 10.193.32.6
+          config:
+            interface:
+            - gateway: 10.193.32.1
+              ipaddr: 10.193.32.6
+              name: eth0
+              netmask: 255.255.255.240
+              prefixlen: 28
+              route_gateway: 10.193.32.1
+            ipa_params: *id001
+            net_params: *id002
+            ssh_key: *id003
+            vm_params: *id004
+  vars:
+    ansible_become_method: sudo
+    ansible_become_pass: Test1@3456789
+    ansible_password: Test1@3456789
+    ansible_port: 22
+    ansible_ssh_common_args: -o ProxyJump=d.kulida@10.246.8.22
+    ansible_ssh_private_key_file: /home/dkulida/.ssh/id_rsa
+    ansible_user: user1
+    dns_servers:
+    - 10.246.0.140
+    - 10.246.0.141
+    domain: agentpodd-platform.tech.pd36.digitalgov.gtn
+    hostsfile:
+    - host: ipa-master-02.coresvc-infra.common.pd34.udp.gtn
+      ipaddr: 10.246.0.141
+    - host: ipa-master-01.coresvc-infra.common.pd34.udp.gtn
+      ipaddr: 10.246.0.140
+    - host: kafka-aaaah-01.agentpodd-platform.tech.pd36.digitalgov.gtn
+      ipaddr: 10.193.32.4
+    - host: kafka-aaaah-02.agentpodd-platform.tech.pd36.digitalgov.gtn
+      ipaddr: 10.193.32.5
+    - host: kafka-aaaah-03.agentpodd-platform.tech.pd36.digitalgov.gtn
+      ipaddr: 10.193.32.6
+    ntp_servers:
+    - 10.246.0.140
+    - 10.246.0.141
+    route_files: {}
+    timezone: /usr/share/zoneinfo/Europe/Moscow
+

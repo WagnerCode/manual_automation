@@ -1,0 +1,82 @@
+resource "cloudru_evolution_compute_vm" "{{ inventory_hostname }}" {
+  project_id = "{{ config.vm_params[0].project_id }}"
+
+  # Обязательные
+  name = "{{ inventory_hostname }}"
+
+  zone_identifier = {
+    name = "{{ config.vm_params[0].az }}"
+  }
+
+  flavor_identifier = {
+    name = "{{vm_flavor}}"
+  }
+
+  # Опциональные
+  description = "Cluster {{ config.vm_params[0].ogid }} VM {{ inventory_hostname }}"
+
+  disk_identifiers = [
+     {
+        disk_id = cloudru_evolution_compute_disk.{{ inventory_hostname }}_system_disk.id
+     },
+     {
+        disk_id = cloudru_evolution_compute_disk.{{ inventory_hostname }}_data_disk.id
+     }
+  ]
+
+  network_interfaces = [{
+    interface_id = cloudru_evolution_compute_interface.interface_{{ inventory_hostname }}.id
+  }]
+
+#  image_metadata      =  {
+#         hostname = { 
+#                 string_value = "{{ inventory_hostname }}"
+#         }
+#         public_key = {
+#                string_value = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDTL2d9J5eHMnk+HZQcn3/7OfjlRFqIYyW8IvrKdaC2OvOssgcadVGAYYjUbUZb6pBx0/bxxqRyfE2ByNBb2b7TL4GuyyavvsvPFBOBETJXx1+WjMwF3lna8xNYX9nSVkOh7uDjX4kB8bIJQyT3ilWfrAJuv7A9pTpXrSQq5MMbTHNHGlVnDIxvFNqUc/5fVgtxGgFDVrEokWSYo6ptxdI+jmS692FdpRhQINLLegBQjO1h6LM3xlM3XkXSEbxujO5Rj/D9xezSyQYfhkwzj3V5wi8ffq5ConvP2AT7g6KnHw9rv2fv/8Cab1nTCLEx527wP5R5XlpZao4yOsILapwg/AAIq8cDaZuhlBzszF2TiAo4gImJSWi2OQZfq60EerpeI0vQ+fFrdyMbRDRF0ZMBklVAkOhi+wizPBs1W+EJTnfsLOCW36a3WAFYvwW6MQvJR0o55xcHEAlUW2Le4Loiou/nE8LX8Jfpr0khGJacehaeQm3burXSy0urE4V9vQM= dkulida@fedora"
+#                #int_value = 801329956
+#                #bool_value = false
+#         },
+#         name = {
+#             string_value = "{{ config.vm_params[0].user }}"
+#         },
+#         linux_password = {
+#             string_value = "Test1@3456789"
+#         }
+#
+#  }
+
+  placement_group_id = cloudru_evolution_compute_placement_group.placement_group_{{ config.vm_params[0].ogid }}.id
+
+  cloud_init_userdata = base64encode(<<-CLOUDINIT
+    #cloud-config
+    package_update: true
+    packages:
+      - curl
+      - wget
+    runcmd:
+      - echo "Hello from Terraform!" > /tmp/hello.txt
+      - adduser -g wheel {{ config.vm_params[0].user }}
+      - echo '{{ config.vm_params[0].user }}:Test1@3456789' | chpasswd
+{% for i in config.ssh_key %}      - echo "{{ i["ssh_key"] }}" >> /home/{{ config.vm_params[0].user }}/.ssh/authorized_keys
+{% endfor %}      - chmod 600 /home/{{ config.vm_params[0].user }}/.ssh/authorized_keys
+{% for i in config.interface %}      - mkdir -p /etc/net/ifaces/{{i["name"]}}
+      - echo "ONBOOT=yes" > /etc/net/ifaces/{{i["name"]}}/options
+      - echo "DISABLED=no" >> /etc/net/ifaces/{{i["name"]}}/options
+      - echo "CONFIG_IPV4=yes" >> /etc/net/ifaces/{{i["name"]}}/options
+      - echo "CONFIG_WIRELESS=no" >> /etc/net/ifaces/{{i["name"]}}/options
+      - echo "TYPE=eth" >> /etc/net/ifaces/{{i["name"]}}/options
+      - echo "NM_CONTROLLED=no" >> /etc/net/ifaces/{{i["name"]}}/options
+      - echo "BOOTPROTO=static" >> /etc/net/ifaces/{{i["name"]}}/options
+      - echo "{{i["ipaddr"]}}/{{i["prefixlen"]}}" > /etc/net/ifaces/{{i["name"]}}/ipv4address
+{% if i['gateway'] is defined %}      - echo "default via {{i["gateway"]}}" > /etc/net/ifaces/{{i["name"]}}/ipv4route
+{% endif %}{% endfor %}      - sleep 10
+      - hostnamectl hostname {{ inventory_hostname }}.{{ config.vm_params[0].domain }}
+      - systemctl restart network
+      - rm /etc/resolv.conf
+{% for i in dns_servers %}      - echo "nameserver {{ i }}" >> /etc/resolv.conf
+{% endfor %}
+  CLOUDINIT
+  )
+}
+

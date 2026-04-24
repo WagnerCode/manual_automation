@@ -1,0 +1,7 @@
+type,interface
+ipaddr,10.193.32.6
+netmask,255.255.255.240
+gateway,1
+hosts,yes
+route_target,oam
+route_gateway,1

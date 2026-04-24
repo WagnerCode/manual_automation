@@ -1,0 +1,24 @@
+resource "cloudru_evolution_compute_disk" "{{ inventory_hostname }}_system_disk" {
+  project_id = "{{ config.vm_params[0].project_id }}"
+
+  # Обязательные
+  name = "{{ inventory_hostname }}_system_disk"
+  size = {{ config.vm_params[0].hdd}}
+
+  zone_identifier = {
+    name = "{{ config.vm_params[0].az }}"
+  }
+
+  disk_type_identifier = {
+    name = "SSD"
+  }
+
+  # Опциональные
+  description = "System disk for {{ inventory_hostname }}"
+  bootable    = true
+  image_id    = data.cloudru_evolution_compute_image_collection.{{ inventory_hostname }}_image.images[0].id
+  encrypted   = false
+  readonly    = false
+  shared      = false
+}
+

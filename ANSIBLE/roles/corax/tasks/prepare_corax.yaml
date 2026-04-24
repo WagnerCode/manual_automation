@@ -1,0 +1,37 @@
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_user }}"
+    mode: '0775'
+    recurse: true
+  with_items:
+    - "{{ kafka.installdir }}"
+    - "{{ kafka.datadir }}"
+    - "{{ zookeeper.installdir }}"
+    - "{{ zookeeper.datadir }}"
+    - "{{ kafka.installdir}}/bin"
+
+# - name: Change owner of password-encrypt-cli jar file
+#   ansible.builtin.file:
+#     path: /tmp/password-encrypt-cli-2.4.0.jar
+#     owner: kafka
+#     group: kafka
+#     state: file
+
+
+#- name: Change fcontext selinux for bin directory
+#  community.general.sefcontext:
+#    target: "{{ kafka.installdir }}/bin(/.*)?"
+#    setype: bin_t
+#    state: present
+#  when: ansible_selinux.status == 'enabled'
+
+#- name: Apply new context for bin directory
+#  ansible.builtin.command: "restorecon -rv {{ kafka.installdir }}/bin"
+#  when: ansible_selinux.status == 'enabled'
+
+#- name: Temp permissive selinux for install
+#  ansible.builtin.command: "setenforce 0"
+#  when: ansible_selinux.status == 'enabled'
+#
