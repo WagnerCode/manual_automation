@@ -37,8 +37,12 @@ class ipdir():
       if(self.c==0):
          self.c+=1
          self.dirdict["all"]=dt
-         self.dirdict["all"]["vars"]={"ansible_user":"user1","ansible_password":"Test1@3456789","ansible_port":22,"ansible_become_pass":"Test1@3456789","ansible_become_method":"sudo",
-                                      "domain": "agentpodd-platform.tech.pd36.digitalgov.gtn",
+         self.dirdict["all"]["vars"]={"ansible_user":os.getenv("ANSIBLE_USER", ""),
+                                      "ansible_password":os.getenv("ANSIBLE_PASSWORD", ""),
+                                      "ansible_port":int(os.getenv("ANSIBLE_PORT", 22)),
+                                      "ansible_become_pass":os.getenv("ANSIBLE_BECOME_PASS", ""),
+                                      "ansible_become_method":"sudo",
+                                      "domain": os.getenv("DOMAIN", "agentpodd-platform.tech.pd36.digitalgov.gtn"),
                                       "hostsfile":[
                                                {"host": "ipa-master-02.coresvc-infra.common.pd34.udp.gtn","ipaddr": "10.246.0.141"},
                                                {"host": "ipa-master-01.coresvc-infra.common.pd34.udp.gtn","ipaddr": "10.246.0.140"}
@@ -46,8 +50,8 @@ class ipdir():
                                       "route_files":{},"ntp_servers":["10.246.0.140","10.246.0.141"],
                                       "dns_servers": ["10.246.0.140","10.246.0.141"],
                                       "timezone":"/usr/share/zoneinfo/Europe/Moscow",
-                                      "ansible_ssh_common_args": '-o ProxyJump=d.kulida@10.246.8.22',
-                                      "ansible_ssh_private_key_file": "/home/dkulida/.ssh/id_rsa"}
+                                      "ansible_ssh_common_args": os.getenv("ANSIBLE_SSH_COMMON_ARGS", ""),
+                                      "ansible_ssh_private_key_file": os.getenv("ANSIBLE_SSH_PRIVATE_KEY_FILE", "")}
          self.routes={"mgmt":
                          {
                          #   "10.0.0.0/255.0.0.0":{"ipaddr":"10.0.0.0","netmask":"255.0.0.0"}

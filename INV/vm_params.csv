@@ -15,5 +15,5 @@ gis_code,agentpodd
 stand_type,tech
 user,user1
 domain,agentpodd-platform.tech.pd36.digitalgov.gtn
-dstr_path,/home/dkulida/CORAX_DSTR/
+dstr_path,./
 dstr_file,corax_fixed.tar.bz2

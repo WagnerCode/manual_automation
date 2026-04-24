@@ -1,0 +1,67 @@
+stages:
+  - validate
+  - prepare
+  - plan
+  - deploy
+
+variables:
+  ANSIBLE_HOST_KEY_CHECKING: "False"
+  ANSIBLE_FORCE_COLOR: "True"
+  # Default values for preparation script
+  ANSIBLE_USER: "user1"
+  ANSIBLE_PORT: "22"
+  DOMAIN: "agentpodd-platform.tech.pd36.digitalgov.gtn"
+
+default:
+  image: python:3.9-slim
+  before_script:
+    - apt-get update && apt-get install -y gnupg software-properties-common curl git lsb-release
+    - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+    - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    - apt-get update && apt-get install -y terraform
+    - pip install ansible requests pyyaml
+    - ansible-galaxy collection install community.general
+    - |
+      if [ -n "$ANSIBLE_SSH_PRIVATE_KEY" ]; then
+        mkdir -p ~/.ssh
+        echo "$ANSIBLE_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        export ANSIBLE_SSH_PRIVATE_KEY_FILE=~/.ssh/id_rsa
+      fi
+
+ansible-syntax-check:
+  stage: validate
+  script:
+    - ansible-playbook ANSIBLE/playbook.yaml --syntax-check
+
+generate-inventory:
+  stage: prepare
+  script:
+    - python3 ANSIBLE/ansible_prepare_021.py > inventory.yaml
+  artifacts:
+    paths:
+      - inventory.yaml
+    expire_in: 1 day
+
+terraform-plan:
+  stage: plan
+  script:
+    - ansible-playbook -i inventory.yaml ANSIBLE/playbook.yaml --tags tf_configs
+    - cd ANSIBLE/tf
+    - terraform init
+    - terraform plan
+  artifacts:
+    paths:
+      - ANSIBLE/tf/
+    expire_in: 1 day
+  dependencies:
+    - generate-inventory
+
+deploy:
+  stage: deploy
+  script:
+    - ansible-playbook -i inventory.yaml ANSIBLE/playbook.yaml
+  when: manual
+  dependencies:
+    - generate-inventory
+    - terraform-plan
