@@ -26,16 +26,29 @@ export TF_VAR_CLOUDRU_KEY_ID="ваш_key_id"
 export TF_VAR_CLOUDRU_SECRET="ваш_secret"
 export CLOUDRU_PROJECT_ID="id_проекта"
 
-# Cloud.Ru Service URLs (примеры)
+# Cloud.Ru Service URLs (обязательны все)
 export CLOUDRU_COMPUTE_API_URL="https://compute.api.cloud.ru"
 export CLOUDRU_VPC_API_URL="https://vpc.api.cloud.ru"
 export CLOUDRU_IAM_API_URL="https://iam.api.cloud.ru"
-# ... и остальные (см. ANSIBLE/roles/check_inventory/tasks/main.yaml)
+export CLOUDRU_MAGIC_ROUTER_API_URL="https://router.api.cloud.ru"
+export CLOUDRU_QUOTES_API_URL="https://quotes.api.cloud.ru"
+export CLOUDRU_BAREMETAL_API_URL="https://baremetal.api.cloud.ru"
+export CLOUDRU_MK8S_API_URL="https://mk8s.api.cloud.ru"
+export CLOUDRU_DNS_API_URL="https://dns.api.cloud.ru"
+export CLOUDRU_NLB_API_URL="https://nlb.api.cloud.ru"
+export CLOUDRU_KAFKA_API_URL="https://kafka.api.cloud.ru"
+export CLOUDRU_REDIS_API_URL="https://redis.api.cloud.ru"
+export CLOUDRU_S3_API_URL="https://s3.api.cloud.ru"
 
 # FreeIPA Credentials (для ввода в домен)
 export IPA_ADDER="имя_пользователя_ipa"
 export IPA_ADDER_PASSWORD="пароль_пользователя_ipa"
+
+# Дополнительные настройки
+export keystore_password_length=16
 ```
+
+> **Важно**: Скрипт генерации инвентаря `ANSIBLE/ansible_prepare_021.py` содержит ряд значений по умолчанию (пароли, SSH-ключи, DNS). Перед запуском рекомендуется проверить содержимое конструктора `class ipdir` в этом файле.
 
 ---
 
@@ -123,13 +136,15 @@ INV/
 
 ## Шаг 2: Генерация инвентаря
 
-После заполнения всех файлов в `INV/`, запустите скрипт для сборки `inventory.yaml`:
+Скрипт генерации по умолчанию ищет данные в текущей директории. Для корректной сборки перейдите в `INV/` и укажите путь к скрипту:
 
 ```bash
-python3 ANSIBLE/ansible_prepare_021.py > inventory.yaml
+cd INV/
+python3 ../ANSIBLE/ansible_prepare_021.py > ../inventory.yaml
+cd ..
 ```
 
-*Проверьте созданный файл `inventory.yaml`, чтобы убедиться, что все хосты и переменные подтянулись корректно.*
+*Проверьте созданный файл `inventory.yaml`, чтобы убедиться, что в него попали только нужные хосты и отсутствуют лишние группы (например, `.git`).*
 
 ---
 
